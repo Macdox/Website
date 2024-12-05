@@ -1,0 +1,35 @@
+@import url('https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,100..900;1,100..900&display=swap');
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    scroll-behavior: smooth;
+    font-family: "Saira", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 500;
+    font-style: normal;
+    font-variation-settings: "wdth" 100;
+}
+.hero{
+    background-image: url("./inputs/tx2sx_DwgDj2uMHk09j6q-transformed.jpeg");
+}
+.links
+{
+    gap:2rem;
+}
+.open{
+    display: block;
+}
+.sidebar
+{
+    z-index: 999;
+}
+@media screen and (max-width: 994px){
+    .toggle-btn{
+        display: block;
+    }
+    .Logo
+    {
+        margin-top: 1.2rem;
+    }
+}

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css" integrity="sha512-5Hs3dF2AEPkpNAR7UiOHba+lRSJNeM2ECkwxUIxC1Q/FLycGTbNapWXB4tP889k5T5Ju8fs4b1P5z/iB4nMfSQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Document</title>
+</head>
+<body class="h-screen">
+    <section class="hero h-screen bg-black bg-cover bg-center">
+        <nav class="flex mx-8 item-center aling-middle justify-between">
+            <div class="Logo m-2">
+                <img src="./inputs/Frame 5.svg" alt="">
+            </div>
+            <ul class="links text-white 2xl:flex align-middle item-center m-6 hidden ">
+                <li>Home</li>
+                <li>Offers</li>
+                <li>Events</li>
+                <li>Products</li>
+                <li><button class="border rounded-lg hover:bg-white hover:text-black"><span class="m-6">Contact us</span></button></li>
+            </ul>
+            <div class="toggle-btn text-white m-6 text-2xl 2xl:hidden md:block">
+                <i class="fa-solid fa-bars"></i>
+            </div>
+            <div class="sidebar hidden text-black bg-white/30 backdrop-blur-sm right-0 top-0 fixed w-80 h-screen shadow-2xl shadow-white z-50">
+                <ul class="flex flex-col item-start gap-12 m-8 ">
+                    <li>
+                        <div class="Logo my-2 flex">
+                            <img src="./inputs/Frame 5 black.svg" alt="">
+                            <div class="toggle-close text-white m-6 text-2xl 2xl:hidden md:block">
+                                <i class="fa-solid fa-x"></i>
+                            </div>
+                        </div>
+                    </li>
+                    <li>Home</li>
+                    <li>Offers</li>
+                    <li>Events</li>
+                    <li>Products</li>
+                    <li>Contact us</li>
+                </ul>
+            </div>
+        </nav>
+        
+    </section>
+    <section class="about">
+    </section>
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+    <script>
+      AOS.init();
+    </script>
+    <script src="script.js"></script>
+</body>
+</html>
