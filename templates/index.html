@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barcode Scanner</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .scanner-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .scanner-section h3 {
+            color: #555;
+            margin-bottom: 15px;
+        }
+        
+        .file-upload {
+            position: relative;
+            display: inline-block;
+            margin: 10px;
+        }
+        
+        .file-upload input[type=file] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .file-upload-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            display: inline-block;
+            transition: all 0.3s ease;
+            border: none;
+            font-size: 16px;
+        }
+        
+        .file-upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        
+        .camera-section {
+            text-align: center;
+        }
+        
+        #video {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 10px;
+            margin: 10px 0;
+            display: none;
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        /* Navigation Styles */
+        .navigation {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .nav-btn {
+            display: inline-block;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px 3px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+        }
+        
+        .nav-btn.logout {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+        }
+        
+        /* Responsive navigation */
+        @media (max-width: 768px) {
+            .nav-btn {
+                display: block;
+                margin: 8px auto;
+                max-width: 200px;
+                font-size: 16px;
+                padding: 12px 20px;
+            }
+            
+            .navigation {
+                padding: 15px 10px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .nav-btn {
+                font-size: 14px;
+                padding: 10px 16px;
+                margin: 6px auto;
+            }
+        }
+        
+        .results {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .results.show {
+            display: block;
+        }
+        
+        .barcode-result {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .barcode-result.verified {
+            border-left-color: #27ae60;
+            background: #f8fff9;
+        }
+        
+        .barcode-result.not-verified {
+            border-left-color: #e74c3c;
+            background: #fff8f8;
+        }
+        
+        .barcode-data {
+            font-weight: bold;
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+        
+        .barcode-type {
+            color: #666;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+        
+        .verification-status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        
+        .verification-status.verified {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .verification-status.not-verified {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .student-info {
+            background: #e9ecef;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .student-info h4 {
+            margin: 0 0 8px 0;
+            color: #495057;
+        }
+        
+        .error {
+            color: #e74c3c;
+            background: #fdf2f2;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #e74c3c;
+        }
+        
+        .success {
+            color: #27ae60;
+            background: #f2fdf4;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #27ae60;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        .scan-status {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f0f8ff;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            color: #2c5aa0;
+        }
+        
+        .scan-status.scanning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .scan-status.found {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .continuous-results {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            max-width: 300px;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .continuous-results.show {
+            display: block;
+        }
+        
+        .close-btn {
+            float: right;
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: #666;
+        }
+        
+        .close-btn:hover {
+            color: #333;
+        }
+        
+        /* Popup Styles */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .popup-overlay.show {
+            display: flex;
+        }
+        
+        .popup {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            transform: scale(0.8);
+            transition: transform 0.3s ease;
+        }
+        
+        .popup-overlay.show .popup {
+            transform: scale(1);
+        }
+        
+        .popup-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+        
+        .popup-message {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .popup-student-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+        
+        .popup-close {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        .popup-close:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        
+        .popup.success {
+            border-left: 5px solid #27ae60;
+        }
+        
+        .popup.info {
+            border-left: 5px solid #3498db;
+        }
+        
+        .popup.error {
+            border-left: 5px solid #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 Barcode Scanner</h1>
+        
+        <!-- Navigation -->
+        <div class="navigation">
+            <a href="/" class="nav-btn">🏠 Scanner</a>
+            <a href="/manual_entry" class="nav-btn">✋ Manual Entry</a>
+            <a href="/students" class="nav-btn">👥 Students</a>
+            <a href="/scan_logs" class="nav-btn">📊 Scan Logs</a>
+            <a href="/logout" class="nav-btn logout">🚪 Logout</a>
+        </div>
+        
+        <!-- File Upload Section -->
+        <div class="scanner-section">
+            <h3>📁 Upload Image</h3>
+            <div class="file-upload">
+                <input type="file" id="fileInput" accept="image/*">
+                <label for="fileInput" class="file-upload-btn">
+                    Choose Image File
+                </label>
+            </div>
+        </div>
+        
+        <!-- Camera Section -->
+        <div class="scanner-section camera-section">
+            <h3>📷 Automatic Barcode Scanner</h3>
+            <video id="video" autoplay playsinline></video>
+            <canvas id="canvas" style="display: none;"></canvas>
+            <div>
+                <button id="startCamera" class="btn">Start Auto Scan</button>
+                <button id="stopCamera" class="btn" disabled>Stop Scan</button>
+            </div>
+            <div id="scanStatus" class="scan-status">
+                <p>🔍 Ready to scan - point camera at barcode</p>
+            </div>
+        </div>
+        
+        <!-- Loading Indicator -->
+        <div id="loading" class="loading">
+            <p>🔍 Scanning for barcodes...</p>
+        </div>
+        
+        <!-- Results Section -->
+        <div id="results" class="results">
+            <h3>📊 Scan Results</h3>
+            <div id="resultContent"></div>
+        </div>
+        
+        <!-- Continuous Scan Results Popup -->
+        <div id="continuousResults" class="continuous-results">
+            <button class="close-btn" onclick="closeContinuousResults()">&times;</button>
+            <h4>✅ Barcode Found!</h4>
+            <div id="continuousContent"></div>
+        </div>
+    </div>
+
+    <!-- Registration Status Popup -->
+    <div id="popupOverlay" class="popup-overlay">
+        <div id="popup" class="popup">
+            <div id="popupIcon" class="popup-icon"></div>
+            <div id="popupMessage" class="popup-message"></div>
+            <div id="popupStudentInfo" class="popup-student-info" style="display: none;"></div>
+            <button id="popupClose" class="popup-close">OK</button>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const startCameraBtn = document.getElementById('startCamera');
+        const stopCameraBtn = document.getElementById('stopCamera');
+        const results = document.getElementById('results');
+        const resultContent = document.getElementById('resultContent');
+        const loading = document.getElementById('loading');
+        const scanStatus = document.getElementById('scanStatus');
+        const continuousResults = document.getElementById('continuousResults');
+        const continuousContent = document.getElementById('continuousContent');
+        const popupOverlay = document.getElementById('popupOverlay');
+        const popup = document.getElementById('popup');
+        const popupIcon = document.getElementById('popupIcon');
+        const popupMessage = document.getElementById('popupMessage');
+        const popupStudentInfo = document.getElementById('popupStudentInfo');
+        const popupClose = document.getElementById('popupClose');
+        
+        let stream = null;
+        let scanningInterval = null;
+        let isScanning = false;
+        let lastFoundBarcode = null;
+        
+        // Popup functions
+        function showPopup(type, message, studentInfo = null) {
+            popupIcon.textContent = type === 'success' ? '✅' : type === 'info' ? 'ℹ️' : '❌';
+            popupMessage.textContent = message;
+            
+            // Reset popup classes
+            popup.className = 'popup';
+            popup.classList.add(type);
+            
+            if (studentInfo) {
+                popupStudentInfo.innerHTML = `
+                    <h4>👤 ${studentInfo.name}</h4>
+                    <p>📧 ${studentInfo.email}</p>
+                    <p>🎂 Age: ${studentInfo.age}</p>
+                    <p>🆔 ID: ${studentInfo.student_id}</p>
+                `;
+                popupStudentInfo.style.display = 'block';
+            } else {
+                popupStudentInfo.style.display = 'none';
+            }
+            
+            popupOverlay.classList.add('show');
+        }
+        
+        function closePopup() {
+            popupOverlay.classList.remove('show');
+        }
+        
+        // Close popup event listeners
+        popupClose.addEventListener('click', closePopup);
+        popupOverlay.addEventListener('click', function(e) {
+            if (e.target === popupOverlay) {
+                closePopup();
+            }
+        });
+        
+        // File upload handler
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                uploadAndScan(file);
+            }
+        });
+        
+        // Camera controls
+        startCameraBtn.addEventListener('click', async function() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: 'environment', // Use back camera on mobile
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    } 
+                });
+                video.srcObject = stream;
+                video.style.display = 'block';
+                startCameraBtn.disabled = true;
+                stopCameraBtn.disabled = false;
+                
+                // Start continuous scanning
+                startContinuousScanning();
+                updateScanStatus('🔍 Scanning for barcodes...', 'scanning');
+            } catch (error) {
+                showError('Error accessing camera: ' + error.message);
+                updateScanStatus('❌ Camera access failed', 'error');
+            }
+        });
+        
+        stopCameraBtn.addEventListener('click', function() {
+            stopCamera();
+        });
+        
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            if (scanningInterval) {
+                clearInterval(scanningInterval);
+                scanningInterval = null;
+            }
+            isScanning = false;
+            video.style.display = 'none';
+            startCameraBtn.disabled = false;
+            stopCameraBtn.disabled = true;
+            updateScanStatus('📷 Camera stopped', 'idle');
+            closeContinuousResults();
+        }
+        
+        function startContinuousScanning() {
+            if (isScanning) return;
+            
+            isScanning = true;
+            scanningInterval = setInterval(() => {
+                if (video.readyState === 4) { // HAVE_ENOUGH_DATA
+                    captureAndScanContinuous();
+                }
+            }, 500); // Scan every 500ms
+        }
+        
+        function captureAndScanContinuous() {
+            if (!isScanning) return;
+            
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0);
+            
+            // Convert canvas to base64
+            const imageData = canvas.toDataURL('image/jpeg', 0.8);
+            scanCameraImageContinuous(imageData);
+        }
+        
+        function scanCameraImageContinuous(imageData) {
+            fetch('/continuous_scan', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ image: imageData })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.barcodes && data.barcodes.length > 0) {
+                    const newBarcode = data.barcodes[0].data;
+                    
+                    // Only show result if it's a new barcode (prevent spam)
+                    if (newBarcode !== lastFoundBarcode) {
+                        lastFoundBarcode = newBarcode;
+                        showRegistrationPopup(data.barcodes[0]);
+                        updateScanStatus('✅ Barcode found!', 'found');
+                        
+                        // Play success sound (if browser supports it)
+                        playSuccessSound();
+                        
+                        // Reset after 5 seconds to allow scanning new barcodes
+                        setTimeout(() => {
+                            lastFoundBarcode = null;
+                            if (isScanning) {
+                                updateScanStatus('🔍 Scanning for barcodes...', 'scanning');
+                            }
+                        }, 5000);
+                    }
+                } else {
+                    // No barcode found, keep scanning
+                    if (isScanning) {
+                        updateScanStatus('🔍 Scanning for barcodes...', 'scanning');
+                    }
+                }
+            })
+            .catch(error => {
+                console.log('Scan error (continuing):', error);
+                // Don't show errors for continuous scanning to avoid spam
+            });
+        }
+        
+        function showRegistrationPopup(barcode) {
+            const verification = barcode.verification;
+            
+            if (verification && verification.verified) {
+                if (verification.action === 'registered') {
+                    // Student just got registered
+                    showPopup('success', verification.popup_message, verification.student);
+                } else if (verification.action === 'already_registered') {
+                    // Student already registered
+                    showPopup('info', verification.popup_message, verification.student);
+                }
+            } else if (verification && verification.action === 'not_found') {
+                // Student not found
+                showPopup('error', verification.popup_message);
+            } else {
+                // Generic error
+                showPopup('error', `Error processing barcode: ${barcode.data}`);
+            }
+        }
+        
+        function closeContinuousResults() {
+            continuousResults.classList.remove('show');
+        }
+        
+        function updateScanStatus(message, type) {
+            scanStatus.innerHTML = `<p>${message}</p>`;
+            scanStatus.className = `scan-status ${type}`;
+        }
+        
+        function playSuccessSound() {
+            try {
+                // Create a simple beep sound
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.1);
+            } catch (e) {
+                // Ignore audio errors
+            }
+        }
+        
+        function uploadAndScan(file) {
+            showLoading(true);
+            const formData = new FormData();
+            formData.append('image', file);
+            
+            fetch('/scan', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                showLoading(false);
+                if (data.success && data.barcodes && data.barcodes.length > 0) {
+                    // Show popup for first barcode found
+                    showRegistrationPopup(data.barcodes[0]);
+                    // Also show detailed results
+                    showResults(data.barcodes);
+                } else {
+                    showError(data.message || 'No barcodes found');
+                }
+            })
+            .catch(error => {
+                showLoading(false);
+                showError('Error uploading file: ' + error.message);
+            });
+        }
+        
+        function showResults(barcodes) {
+            resultContent.innerHTML = '';
+            
+            if (barcodes && barcodes.length > 0) {
+                const successDiv = document.createElement('div');
+                successDiv.className = 'success';
+                successDiv.textContent = `✅ Found ${barcodes.length} barcode(s)`;
+                resultContent.appendChild(successDiv);
+                
+                barcodes.forEach((barcode, index) => {
+                    const barcodeDiv = document.createElement('div');
+                    const isVerified = barcode.verification && barcode.verification.verified;
+                    const verificationClass = isVerified ? 'verified' : 'not-verified';
+                    
+                    barcodeDiv.className = `barcode-result ${verificationClass}`;
+                    
+                    let verificationHtml = '';
+                    if (barcode.verification) {
+                        if (barcode.verification.verified) {
+                            const student = barcode.verification.student;
+                            verificationHtml = `
+                                <div class="verification-status verified">
+                                    ✅ Student Verified
+                                </div>
+                                <div class="student-info">
+                                    <h4>👤 ${student.name}</h4>
+                                    <p>📧 ${student.email}</p>
+                                    <p>🎂 Age: ${student.age}</p>
+                                    <p>📋 Registration Status: ${student.registration_status ? 'Registered' : 'Not Registered'}</p>
+                                </div>
+                            `;
+                        } else if (barcode.verification.error) {
+                            verificationHtml = `
+                                <div class="verification-status not-verified">
+                                    ❌ Database Error: ${barcode.verification.error}
+                                </div>
+                            `;
+                        } else {
+                            verificationHtml = `
+                                <div class="verification-status not-verified">
+                                    ❌ ${barcode.verification.message}
+                                </div>
+                            `;
+                        }
+                    }
+                    
+                    barcodeDiv.innerHTML = `
+                        <div class="barcode-data">📊 Data: ${barcode.data}</div>
+                        <div class="barcode-type">🏷️ Type: ${barcode.type}</div>
+                        <div class="barcode-type">📍 Location: x:${barcode.location.x}, y:${barcode.location.y}, w:${barcode.location.width}, h:${barcode.location.height}</div>
+                        ${verificationHtml}
+                    `;
+                    resultContent.appendChild(barcodeDiv);
+                });
+            }
+            
+            results.classList.add('show');
+        }
+        
+        function showError(message) {
+            resultContent.innerHTML = `<div class="error">❌ ${message}</div>`;
+            results.classList.add('show');
+        }
+        
+        function showLoading(show) {
+            if (show) {
+                loading.classList.add('show');
+                results.classList.remove('show');
+            } else {
+                loading.classList.remove('show');
+            }
+        }
+    </script>
+</body>
+</html>

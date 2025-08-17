@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Entry - Barcode Scanner</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .navigation {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .nav-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            white-space: nowrap;
+        }
+        
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+        }
+        
+        .nav-btn.logout {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+        }
+        
+        .navigation {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        /* Responsive navigation */
+        @media (max-width: 768px) {
+            .nav-btn {
+                display: block;
+                margin: 8px auto;
+                max-width: 200px;
+                font-size: 16px;
+                padding: 12px 20px;
+            }
+            
+            .navigation {
+                padding: 15px 10px 20px 10px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .nav-btn {
+                font-size: 14px;
+                padding: 10px 16px;
+                margin: 6px auto;
+            }
+        }
+        
+        .manual-entry-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        
+        .manual-entry-section h3 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.5em;
+        }
+        
+        .entry-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .form-group label {
+            font-weight: 600;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .form-group input {
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 18px;
+            transition: border-color 0.3s ease;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .submit-btn {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            align-self: center;
+            min-width: 200px;
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        
+        .result-section {
+            margin-top: 30px;
+            display: none;
+        }
+        
+        .result-section.show {
+            display: block;
+        }
+        
+        .result-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-left: 5px solid #667eea;
+        }
+        
+        .result-card.success {
+            border-left-color: #28a745;
+            background: #f8fff9;
+        }
+        
+        .result-card.info {
+            border-left-color: #17a2b8;
+            background: #f0f9ff;
+        }
+        
+        .result-card.error {
+            border-left-color: #dc3545;
+            background: #fff5f5;
+        }
+        
+        .result-icon {
+            font-size: 3em;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        .result-message {
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .student-details {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 15px;
+        }
+        
+        .student-details h4 {
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        
+        .detail-label {
+            font-weight: 600;
+            color: #666;
+        }
+        
+        .detail-value {
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .clear-btn {
+            background: linear-gradient(45deg, #6c757d, #495057);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .clear-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+        }
+        
+        .instructions {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .instructions h4 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+        
+        .instructions ul {
+            color: #1565c0;
+            margin-left: 20px;
+        }
+        
+        .instructions li {
+            margin: 5px 0;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .entry-form {
+                gap: 15px;
+            }
+            
+            .form-group input {
+                padding: 12px;
+                font-size: 16px;
+            }
+            
+            .submit-btn {
+                padding: 12px 24px;
+                font-size: 16px;
+                min-width: 180px;
+            }
+            
+            .detail-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✋ Manual Entry</h1>
+        
+        <!-- Navigation -->
+        <div class="navigation">
+            <a href="/" class="nav-btn">📱 Scanner</a>
+            <a href="/manual_entry" class="nav-btn">✋ Manual Entry</a>
+            <a href="/students" class="nav-btn">👥 Students</a>
+            <a href="/scan_logs" class="nav-btn">📊 Logs</a>
+            <a href="/logout" class="nav-btn logout">🚪 Logout</a>
+        </div>
+        
+        <!-- Instructions -->
+        <div class="instructions">
+            <h4>📋 Instructions</h4>
+            <ul>
+                <li>Enter the student ID manually for registration</li>
+                <li>Use this when barcode scanning is not possible</li>
+                <li>Student must exist in the database</li>
+                <li>Registration status will be updated automatically</li>
+            </ul>
+        </div>
+        
+        <!-- Manual Entry Form -->
+        <div class="manual-entry-section">
+            <h3>🆔 Enter Student ID</h3>
+            
+            <form id="manualEntryForm" class="entry-form">
+                <div class="form-group">
+                    <label for="studentId">Student ID:</label>
+                    <input 
+                        type="text" 
+                        id="studentId" 
+                        name="student_id" 
+                        placeholder="e.g., 124BTEX2008" 
+                        required
+                        autocomplete="off"
+                    >
+                </div>
+                
+                <button type="submit" id="submitBtn" class="submit-btn">
+                    🔍 Register Student
+                </button>
+            </form>
+            
+            <!-- Loading Indicator -->
+            <div id="loading" class="loading">
+                <p>🔍 Processing registration...</p>
+            </div>
+        </div>
+        
+        <!-- Results Section -->
+        <div id="resultSection" class="result-section">
+            <div id="resultCard" class="result-card">
+                <div id="resultIcon" class="result-icon"></div>
+                <div id="resultMessage" class="result-message"></div>
+                <div id="studentDetails" class="student-details" style="display: none;">
+                    <h4>👤 Student Information</h4>
+                    <div id="detailsContent"></div>
+                </div>
+                <button id="clearBtn" class="clear-btn" onclick="clearResults()">
+                    🆕 Enter Another ID
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('manualEntryForm');
+        const studentIdInput = document.getElementById('studentId');
+        const submitBtn = document.getElementById('submitBtn');
+        const loading = document.getElementById('loading');
+        const resultSection = document.getElementById('resultSection');
+        const resultCard = document.getElementById('resultCard');
+        const resultIcon = document.getElementById('resultIcon');
+        const resultMessage = document.getElementById('resultMessage');
+        const studentDetails = document.getElementById('studentDetails');
+        const detailsContent = document.getElementById('detailsContent');
+        
+        // Auto-focus on student ID input
+        studentIdInput.focus();
+        
+        // Form submission handler
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const studentId = studentIdInput.value.trim();
+            if (!studentId) {
+                showError('Please enter a student ID');
+                return;
+            }
+            
+            registerStudent(studentId);
+        });
+        
+        function registerStudent(studentId) {
+            // Show loading
+            loading.style.display = 'block';
+            submitBtn.disabled = true;
+            resultSection.classList.remove('show');
+            
+            // Prepare form data
+            const formData = new FormData();
+            formData.append('student_id', studentId);
+            
+            // Make request
+            fetch('/manual_register', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                loading.style.display = 'none';
+                submitBtn.disabled = false;
+                
+                if (data.error) {
+                    showError(data.error);
+                } else if (data.verified) {
+                    if (data.action === 'registered') {
+                        showSuccess(data.popup_message, data.student);
+                    } else if (data.action === 'already_registered') {
+                        showInfo(data.popup_message, data.student);
+                    }
+                } else if (data.action === 'not_found') {
+                    showError(data.popup_message);
+                } else {
+                    showError('Unknown error occurred');
+                }
+            })
+            .catch(error => {
+                loading.style.display = 'none';
+                submitBtn.disabled = false;
+                showError('Network error: ' + error.message);
+            });
+        }
+        
+        function showSuccess(message, student = null) {
+            resultCard.className = 'result-card success';
+            resultIcon.textContent = '✅';
+            resultMessage.textContent = message;
+            
+            if (student) {
+                showStudentDetails(student);
+            }
+            
+            resultSection.classList.add('show');
+            playSuccessSound();
+        }
+        
+        function showInfo(message, student = null) {
+            resultCard.className = 'result-card info';
+            resultIcon.textContent = 'ℹ️';
+            resultMessage.textContent = message;
+            
+            if (student) {
+                showStudentDetails(student);
+            }
+            
+            resultSection.classList.add('show');
+        }
+        
+        function showError(message) {
+            resultCard.className = 'result-card error';
+            resultIcon.textContent = '❌';
+            resultMessage.textContent = message;
+            studentDetails.style.display = 'none';
+            
+            resultSection.classList.add('show');
+        }
+        
+        function showStudentDetails(student) {
+            detailsContent.innerHTML = `
+                <div class="detail-row">
+                    <span class="detail-label">🆔 Student ID:</span>
+                    <span class="detail-value">${student.student_id}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">👤 Name:</span>
+                    <span class="detail-value">${student.name}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">📧 Email:</span>
+                    <span class="detail-value">${student.email}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">🎂 Age:</span>
+                    <span class="detail-value">${student.age} years</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">📋 Status:</span>
+                    <span class="detail-value" style="color: ${student.registration_status ? '#28a745' : '#dc3545'}">
+                        ${student.registration_status ? '✅ Registered' : '❌ Not Registered'}
+                    </span>
+                </div>
+            `;
+            studentDetails.style.display = 'block';
+        }
+        
+        function clearResults() {
+            resultSection.classList.remove('show');
+            studentIdInput.value = '';
+            studentIdInput.focus();
+        }
+        
+        function playSuccessSound() {
+            try {
+                // Create a simple success sound
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.2);
+                
+                // Second tone
+                setTimeout(() => {
+                    const oscillator2 = audioContext.createOscillator();
+                    const gainNode2 = audioContext.createGain();
+                    
+                    oscillator2.connect(gainNode2);
+                    gainNode2.connect(audioContext.destination);
+                    
+                    oscillator2.frequency.value = 1000;
+                    oscillator2.type = 'sine';
+                    gainNode2.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                    
+                    oscillator2.start(audioContext.currentTime);
+                    oscillator2.stop(audioContext.currentTime + 0.2);
+                }, 100);
+            } catch (e) {
+                // Ignore audio errors
+            }
+        }
+        
+        // Allow Enter key submission
+        studentIdInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                form.dispatchEvent(new Event('submit'));
+            }
+        });
+        
+        // Clear input when focused
+        studentIdInput.addEventListener('focus', function() {
+            this.select();
+        });
+    </script>
+</body>
+</html>
