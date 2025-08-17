@@ -41,11 +41,7 @@ EXPOSE 5000
 CMD ["gunicorn", \
      "--bind", "0.0.0.0:5000", \
      "--workers", "2", \
-     "--worker-class", "sync", \
-     "--worker-connections", "1000", \
      "--timeout", "60", \
-     "--keepalive", "5", \
      "--max-requests", "1000", \
-     "--max-requests-jitter", "100", \
      "--preload", \
      "app:app"]
