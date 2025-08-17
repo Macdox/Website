@@ -1,6 +1,11 @@
 services:
   - type: web
     name: barcode-scanner
+    env: docker
+    dockerfilePath: ./Dockerfile
+    envVars:s:
+  - type: web
+    name: barcode-scanner
     env: python
     buildCommand: pip install -r requirements-minimal.txt
     startCommand: gunicorn app:app

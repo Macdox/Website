@@ -1,15 +1,10 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash
 import cv2
 import numpy as np
+from pyzbar import pyzbar
 import base64
 import io
 from PIL import Image
-try:
-    from pyzbar import pyzbar
-    PYZBAR_AVAILABLE = True
-except ImportError:
-    PYZBAR_AVAILABLE = False
-    print("Warning: pyzbar not available, using OpenCV QR detector only")
 import os
 import logging
 from database import StudentDatabase
@@ -56,88 +51,62 @@ def login_required(f):
 
 def decode_barcode_from_image(image):
     """
-    Decode barcode from image data using multiple methods
+    Decode barcode from image data
     """
     try:
         # Convert PIL image to OpenCV format
         opencv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+        
+        # Decode barcodes using pyzbar
+        barcodes = pyzbar.decode(opencv_image)
+        
         results = []
-        
-        # Method 1: Try OpenCV QR Code detector (works without pyzbar)
-        try:
-            qr_detector = cv2.QRCodeDetector()
-            data, bbox, _ = qr_detector.detectAndDecode(opencv_image)
+        for barcode in barcodes:
+            # Extract barcode data
+            barcode_data = barcode.data.decode('utf-8')
+            barcode_type = barcode.type
             
-            if data:
-                # Calculate bounding box from bbox points
-                if bbox is not None and len(bbox) > 0:
-                    points = bbox[0]
-                    x = int(min(points[:, 0]))
-                    y = int(min(points[:, 1]))
-                    w = int(max(points[:, 0]) - x)
-                    h = int(max(points[:, 1]) - y)
-                else:
-                    x, y, w, h = 0, 0, 0, 0
-                
-                results.append({
-                    'data': data,
-                    'type': 'QRCODE',
-                    'location': {'x': x, 'y': y, 'width': w, 'height': h}
-                })
-        except Exception as e:
-            app.logger.warning(f"OpenCV QR detection failed: {str(e)}")
+            # Get barcode location
+            (x, y, w, h) = barcode.rect
+            
+            results.append({
+                'data': barcode_data,
+                'type': barcode_type,
+                'location': {'x': x, 'y': y, 'width': w, 'height': h}
+            })
         
-        # Method 2: Try pyzbar if available (for other barcode types)
-        if PYZBAR_AVAILABLE and not results:
-            try:
-                barcodes = pyzbar.decode(opencv_image)
-                
-                for barcode in barcodes:
-                    # Extract barcode data
-                    barcode_data = barcode.data.decode('utf-8')
-                    barcode_type = barcode.type
-                    
-                    # Get barcode location
-                    (x, y, w, h) = barcode.rect
-                    
-                    results.append({
-                        'data': barcode_data,
-                        'type': barcode_type,
-                        'location': {'x': x, 'y': y, 'width': w, 'height': h}
-                    })
-            except Exception as e:
-                app.logger.warning(f"Pyzbar detection failed: {str(e)}")
-        
-        # Method 3: If no results, try preprocessing the image and retry
+        # If no barcodes found, try preprocessing the image
         if not results:
-            try:
-                # Convert to grayscale and apply preprocessing
-                gray = cv2.cvtColor(opencv_image, cv2.COLOR_BGR2GRAY)
-                
-                # Apply adaptive thresholding
-                thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
-                
-                # Try QR detection on processed image
-                qr_detector = cv2.QRCodeDetector()
-                data, bbox, _ = qr_detector.detectAndDecode(thresh)
-                
-                if data:
-                    if bbox is not None and len(bbox) > 0:
-                        points = bbox[0]
-                        x = int(min(points[:, 0]))
-                        y = int(min(points[:, 1]))
-                        w = int(max(points[:, 0]) - x)
-                        h = int(max(points[:, 1]) - y)
-                    else:
-                        x, y, w, h = 0, 0, 0, 0
+            # Convert to grayscale and apply preprocessing
+            gray = cv2.cvtColor(opencv_image, cv2.COLOR_BGR2GRAY)
+            
+            # Apply different preprocessing techniques
+            techniques = [
+                lambda img: cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2),
+                lambda img: cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1],
+                lambda img: cv2.medianBlur(img, 3)
+            ]
+            
+            for technique in techniques:
+                try:
+                    processed = technique(gray)
+                    processed_barcodes = pyzbar.decode(processed)
                     
-                    results.append({
-                        'data': data,
-                        'type': 'QRCODE',
-                        'location': {'x': x, 'y': y, 'width': w, 'height': h}
-                    })
-            except Exception as e:
-                app.logger.warning(f"Preprocessed QR detection failed: {str(e)}")
+                    for barcode in processed_barcodes:
+                        barcode_data = barcode.data.decode('utf-8')
+                        barcode_type = barcode.type
+                        (x, y, w, h) = barcode.rect
+                        
+                        results.append({
+                            'data': barcode_data,
+                            'type': barcode_type,
+                            'location': {'x': x, 'y': y, 'width': w, 'height': h}
+                        })
+                    
+                    if results:
+                        break
+                except Exception as e:
+                    continue
         
         return results
     except Exception as e:
