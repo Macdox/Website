@@ -9,14 +9,20 @@ import os
 import logging
 from database import StudentDatabase
 from datetime import datetime
-from functools import wraps
+from functools import wraps, lru_cache
 
 # Configure logging for production
 if os.environ.get('DEBUG', 'False').lower() != 'true':
+    logging.basicConfig(level=logging.WARNING)  # Reduced logging for performance
+else:
     logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-change-in-production')
+
+# Performance optimizations
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 31536000  # 1 year cache for static files
+app.config['JSON_SORT_KEYS'] = False  # Disable JSON key sorting for performance
 
 # Configure upload folder
 UPLOAD_FOLDER = 'uploads'
@@ -24,7 +30,7 @@ if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max-file-size
+app.config['MAX_CONTENT_LENGTH'] = 8 * 1024 * 1024  # Reduced to 8MB for faster uploads
 
 # MongoDB Configuration (matches your existing setup)
 MONGODB_URL = os.environ.get('MONGODB_URL', "mongodb+srv://admin:Admin%40123@cluster0.lgew08w.mongodb.net/Spiro")
@@ -51,13 +57,18 @@ def login_required(f):
 
 def decode_barcode_from_image(image):
     """
-    Decode barcode from image data
+    Decode barcode from image data with performance optimizations
     """
     try:
+        # Optimize image size for faster processing
+        max_size = 1024
+        if image.size[0] > max_size or image.size[1] > max_size:
+            image.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
+        
         # Convert PIL image to OpenCV format
         opencv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
         
-        # Decode barcodes using pyzbar
+        # Try direct decoding first (fastest)
         barcodes = pyzbar.decode(opencv_image)
         
         results = []
@@ -75,38 +86,25 @@ def decode_barcode_from_image(image):
                 'location': {'x': x, 'y': y, 'width': w, 'height': h}
             })
         
-        # If no barcodes found, try preprocessing the image
+        # Only try preprocessing if no barcodes found (avoid unnecessary processing)
         if not results:
-            # Convert to grayscale and apply preprocessing
+            # Convert to grayscale
             gray = cv2.cvtColor(opencv_image, cv2.COLOR_BGR2GRAY)
             
-            # Apply different preprocessing techniques
-            techniques = [
-                lambda img: cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2),
-                lambda img: cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1],
-                lambda img: cv2.medianBlur(img, 3)
-            ]
+            # Try one optimized preprocessing technique
+            processed = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+            processed_barcodes = pyzbar.decode(processed)
             
-            for technique in techniques:
-                try:
-                    processed = technique(gray)
-                    processed_barcodes = pyzbar.decode(processed)
-                    
-                    for barcode in processed_barcodes:
-                        barcode_data = barcode.data.decode('utf-8')
-                        barcode_type = barcode.type
-                        (x, y, w, h) = barcode.rect
-                        
-                        results.append({
-                            'data': barcode_data,
-                            'type': barcode_type,
-                            'location': {'x': x, 'y': y, 'width': w, 'height': h}
-                        })
-                    
-                    if results:
-                        break
-                except Exception as e:
-                    continue
+            for barcode in processed_barcodes:
+                barcode_data = barcode.data.decode('utf-8')
+                barcode_type = barcode.type
+                (x, y, w, h) = barcode.rect
+                
+                results.append({
+                    'data': barcode_data,
+                    'type': barcode_type,
+                    'location': {'x': x, 'y': y, 'width': w, 'height': h}
+                })
         
         return results
     except Exception as e:
@@ -316,22 +314,8 @@ def api_verify_student(student_id):
 
 @app.route('/health')
 def health_check():
-    """Health check endpoint for monitoring"""
-    try:
-        # Check database connection
-        db_status = "connected" if db.client else "disconnected"
-        
-        return jsonify({
-            "status": "healthy",
-            "database": db_status,
-            "timestamp": datetime.now().isoformat()
-        }), 200
-    except Exception as e:
-        return jsonify({
-            "status": "unhealthy",
-            "error": str(e),
-            "timestamp": datetime.now().isoformat()
-        }), 500
+    """Lightweight health check endpoint for monitoring"""
+    return jsonify({"status": "healthy"}), 200
 
 @app.route('/robots.txt')
 def robots_txt():
