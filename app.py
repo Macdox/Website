@@ -317,6 +317,12 @@ def health_check():
     """Lightweight health check endpoint for monitoring"""
     return jsonify({"status": "healthy"}), 200
 
+@app.route('/keepalive')
+@login_required
+def keepalive_info():
+    """Keep-alive setup information page"""
+    return render_template('keepalive.html')
+
 @app.route('/robots.txt')
 def robots_txt():
     """Serve robots.txt file"""

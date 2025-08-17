@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Keep-Alive Monitor</title>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .status { padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .info { background-color: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        code { background-color: #f8f9fa; padding: 2px 4px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Render Keep-Alive Setup</h1>
+        
+        <div class="status success">
+            <h3>✅ Setup Complete!</h3>
+            <p>Your app now has multiple keep-alive mechanisms:</p>
+        </div>
+
+        <h2>📋 Available Options:</h2>
+        
+        <h3>1. GitHub Actions (Recommended)</h3>
+        <div class="status info">
+            <p>✅ Already configured in <code>.github/workflows/keepalive.yml</code></p>
+            <p>• Pings every 10 minutes during active hours</p>
+            <p>• Pings every 30 minutes during off hours</p>
+            <p>• Completely free and automatic</p>
+        </div>
+
+        <h3>2. UptimeRobot (External Service)</h3>
+        <div class="status info">
+            <p>🔗 Sign up at <a href="https://uptimerobot.com" target="_blank">uptimerobot.com</a></p>
+            <p>• Add your app URL: <code id="app-url">https://barcode-scanner.onrender.com</code></p>
+            <p>• Set monitoring interval to 5 minutes</p>
+            <p>• Free tier allows 50 monitors</p>
+        </div>
+
+        <h3>3. Manual Script</h3>
+        <div class="status info">
+            <p>📁 Use <code>keepalive.py</code> on your local machine or VPS</p>
+            <p>• Run: <code>python keepalive.py</code></p>
+            <p>• Or schedule with cron: <code>*/10 * * * * python /path/to/keepalive.py</code></p>
+        </div>
+
+        <h2>🎯 Instructions:</h2>
+        <ol>
+            <li><strong>Update URLs:</strong> Replace <code>barcode-scanner.onrender.com</code> with your actual Render URL</li>
+            <li><strong>GitHub Actions:</strong> Already configured - will start working after you push</li>
+            <li><strong>Test:</strong> Check the Actions tab in your GitHub repo to see if it's working</li>
+        </ol>
+
+        <div class="status success">
+            <h3>🎉 Benefits:</h3>
+            <ul>
+                <li>No more 50+ second delays</li>
+                <li>App stays warm and responsive</li>
+                <li>Better user experience</li>
+                <li>Multiple redundant systems</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Auto-detect current URL and suggest it
+        if (window.location.href.includes('onrender.com')) {
+            document.getElementById('app-url').textContent = window.location.origin;
+        }
+    </script>
+</body>
+</html>

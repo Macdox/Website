@@ -1,0 +1,34 @@
+name: Keep Render App Alive
+
+on:
+  schedule:
+    # Run every 10 minutes during active hours (8 AM to 11 PM UTC)
+    - cron: '*/10 8-23 * * *'
+    # Run every 30 minutes during off hours (11 PM to 8 AM UTC)
+    - cron: '*/30 23,0-7 * * *'
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Ping Render App
+      run: |
+        # Replace with your actual Render app URL
+        APP_URL="https://barcode-scanner.onrender.com"
+        
+        echo "🚀 Pinging $APP_URL at $(date)"
+        
+        # Make request to health endpoint
+        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$APP_URL/health" --max-time 30)
+        
+        if [ "$HTTP_CODE" = "200" ]; then
+          echo "✅ Success: App is alive (HTTP $HTTP_CODE)"
+        else
+          echo "⚠️ Warning: Received HTTP $HTTP_CODE"
+        fi
+        
+        # Also ping the main page
+        HTTP_CODE_MAIN=$(curl -s -o /dev/null -w "%{http_code}" "$APP_URL/" --max-time 30)
+        echo "📱 Main page status: HTTP $HTTP_CODE_MAIN"
