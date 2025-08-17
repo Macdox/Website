@@ -1,8 +1,9 @@
 services:
   - type: web
     name: barcode-scanner
-    env: docker
-    dockerfilePath: ./Dockerfile
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
     envVars:
       - key: MONGODB_URL
         value: mongodb+srv://admin:Admin%40123@cluster0.lgew08w.mongodb.net/Spiro
