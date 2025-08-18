@@ -115,8 +115,8 @@ def decode_barcode_from_image(image):
 def login():
     """Login page"""
     if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
+        username = request.form.get('username', '').strip().upper()
+        password = request.form.get('password', '')
         
         if (username == ADMIN_CREDENTIALS['username'] and 
             password == ADMIN_CREDENTIALS['password']):
@@ -153,7 +153,7 @@ def manual_entry():
 def manual_register():
     """Handle manual student ID registration"""
     try:
-        student_id = request.form.get('student_id', '').strip()
+        student_id = request.form.get('student_id', '').strip().upper()
         
         if not student_id:
             return jsonify({'error': 'Student ID is required'}), 400
@@ -226,7 +226,7 @@ def scan_camera():
         if results:
             # Verify each barcode against the database
             verified_results = []
-            for barcode in results:
+            barcode_data = barcode.data.decode('utf-8').upper()
                 student_verification = db.verify_student(barcode['data'])
                 barcode['verification'] = student_verification
                 verified_results.append(barcode)
@@ -248,7 +248,7 @@ def scan_camera():
 
 @app.route('/continuous_scan', methods=['POST'])
 @login_required
-def continuous_scan():
+                barcode_data = barcode.data.decode('utf-8').upper()
     """Handle continuous barcode scanning from camera stream"""
     try:
         data = request.get_json()

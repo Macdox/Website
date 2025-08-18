@@ -4,7 +4,7 @@
 # This script pings your deployed app to prevent it from spinning down
 
 # Replace YOUR_APP_URL with your actual Render app URL
-APP_URL="https://barcode-scanner.onrender.com"
+APP_URL=" https://website-htdi.onrender.com"
 
 # Make a simple GET request to keep the app alive
 curl -s -o /dev/null -w "%{http_code}" "$APP_URL/health" > /dev/null 2>&1
