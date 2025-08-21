@@ -438,8 +438,9 @@
             <video id="video" autoplay playsinline></video>
             <canvas id="canvas" style="display: none;"></canvas>
             <div>
-                <button id="startCamera" class="btn">Start Auto Scan</button>
-                <button id="stopCamera" class="btn" disabled>Stop Scan</button>
+                <button id="startCamera" class="btn">Start Camera</button>
+                <button id="stopCamera" class="btn" disabled>Stop Camera</button>
+                <button id="captureFrame" class="btn" disabled>Capture Frame</button>
             </div>
             <div id="scanStatus" class="scan-status">
                 <p>🔍 Ready to scan - point camera at barcode</p>
@@ -481,6 +482,7 @@
         const canvas = document.getElementById('canvas');
         const startCameraBtn = document.getElementById('startCamera');
         const stopCameraBtn = document.getElementById('stopCamera');
+        const captureFrameBtn = document.getElementById('captureFrame');
         const results = document.getElementById('results');
         const resultContent = document.getElementById('resultContent');
         const loading = document.getElementById('loading');
@@ -495,9 +497,7 @@
         const popupClose = document.getElementById('popupClose');
         
         let stream = null;
-        let scanningInterval = null;
-        let isScanning = false;
-        let lastFoundBarcode = null;
+        let isCameraOn = false;
         
         // Popup functions
         function showPopup(type, message, studentInfo = null) {
@@ -548,7 +548,7 @@
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ 
                     video: { 
-                        facingMode: 'environment', // Use back camera on mobile
+                        facingMode: 'environment',
                         width: { ideal: 1280 },
                         height: { ideal: 720 }
                     } 
@@ -557,10 +557,9 @@
                 video.style.display = 'block';
                 startCameraBtn.disabled = true;
                 stopCameraBtn.disabled = false;
-                
-                // Start continuous scanning
-                startContinuousScanning();
-                updateScanStatus('🔍 Scanning for barcodes...', 'scanning');
+                captureFrameBtn.disabled = false;
+                isCameraOn = true;
+                updateScanStatus('🔍 Ready to capture frame', 'scanning');
             } catch (error) {
                 showError('Error accessing camera: ' + error.message);
                 updateScanStatus('❌ Camera access failed', 'error');
@@ -571,88 +570,59 @@
             stopCamera();
         });
         
+        captureFrameBtn.addEventListener('click', function() {
+            if (!isCameraOn) return;
+            captureAndScanOnce();
+        });
+        
         function stopCamera() {
             if (stream) {
                 stream.getTracks().forEach(track => track.stop());
                 stream = null;
             }
-            if (scanningInterval) {
-                clearInterval(scanningInterval);
-                scanningInterval = null;
-            }
-            isScanning = false;
+            isCameraOn = false;
             video.style.display = 'none';
             startCameraBtn.disabled = false;
             stopCameraBtn.disabled = true;
+            captureFrameBtn.disabled = true;
             updateScanStatus('📷 Camera stopped', 'idle');
             closeContinuousResults();
         }
         
-        function startContinuousScanning() {
-            if (isScanning) return;
-            
-            isScanning = true;
-            scanningInterval = setInterval(() => {
-                if (video.readyState === 4) { // HAVE_ENOUGH_DATA
-                    captureAndScanContinuous();
-                }
-            }, 500); // Scan every 500ms
-        }
-        
-        function captureAndScanContinuous() {
-            if (!isScanning) return;
-            
+        function captureAndScanOnce() {
             const context = canvas.getContext('2d');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             context.drawImage(video, 0, 0);
-            
-            // Convert canvas to base64
             const imageData = canvas.toDataURL('image/jpeg', 0.8);
-            scanCameraImageContinuous(imageData);
+            scanCameraImageOnce(imageData);
         }
         
-        function scanCameraImageContinuous(imageData) {
-            fetch('/continuous_scan', {
+        function scanCameraImageOnce(imageData) {
+            showLoading(true);
+            fetch('/scan', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ image: imageData })
+                body: (() => {
+                    const formData = new FormData();
+                    formData.append('image', dataURLtoBlob(imageData), 'capture.jpg');
+                    return formData;
+                })()
             })
             .then(response => response.json())
             .then(data => {
+                showLoading(false);
                 if (data.success && data.barcodes && data.barcodes.length > 0) {
-                    const newBarcode = data.barcodes[0].data;
-                    // Only show result if it's a new barcode (prevent spam)
-                    if (newBarcode !== lastFoundBarcode) {
-                        lastFoundBarcode = newBarcode;
-                        showRegistrationPopup(data.barcodes[0]);
-                        updateScanStatus('✅ Barcode found!', 'found');
-                        playSuccessSound();
-                        // Stop scanning and turn off camera if backend says scanning: false
-                        if (data.scanning === false) {
-                            stopCamera();
-                        } else {
-                            // Reset after 5 seconds to allow scanning new barcodes
-                            setTimeout(() => {
-                                lastFoundBarcode = null;
-                                if (isScanning) {
-                                    updateScanStatus('🔍 Scanning for barcodes...', 'scanning');
-                                }
-                            }, 5000);
-                        }
-                    }
+                    showRegistrationPopup(data.barcodes[0]);
+                    updateScanStatus('✅ Barcode found!', 'found');
+                    playSuccessSound();
                 } else {
-                    // No barcode found, keep scanning
-                    if (isScanning) {
-                        updateScanStatus('🔍 Scanning for barcodes...', 'scanning');
-                    }
+                    showError(data.message || 'No barcodes found');
+                    updateScanStatus('❌ No barcode found', 'error');
                 }
             })
             .catch(error => {
-                console.log('Scan error (continuing):', error);
-                // Don't show errors for continuous scanning to avoid spam
+                showLoading(false);
+                showError('Error scanning frame: ' + error.message);
             });
         }
         
@@ -805,6 +775,15 @@
             } else {
                 loading.classList.remove('show');
             }
+        }
+        
+        function dataURLtoBlob(dataurl) {
+            var arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+                bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+            while(n--){
+                u8arr[n] = bstr.charCodeAt(n);
+            }
+            return new Blob([u8arr], {type:mime});
         }
     </script>
 </body>
