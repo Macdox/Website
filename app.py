@@ -222,19 +222,15 @@ def scan_camera():
         
         # Decode barcodes
         results = decode_barcode_from_image(image)
-        
         if results:
-            # Verify each barcode against the database
-            verified_results = []
-            for barcode in results:
-                student_verification = db.verify_student(barcode['data'])
-                barcode['verification'] = student_verification
-                verified_results.append(barcode)
-            
+            # Only process the first barcode found
+            barcode = results[0]
+            student_verification = db.verify_student(barcode['data'])
+            barcode['verification'] = student_verification
             return jsonify({
                 'success': True,
-                'barcodes': verified_results,
-                'message': f'Found {len(results)} barcode(s) - verified against database'
+                'barcodes': [barcode],
+                'message': 'Barcode found and verified against database'
             })
         else:
             return jsonify({
@@ -262,20 +258,24 @@ def continuous_scan():
         
         # Decode barcodes
         results = decode_barcode_from_image(image)
-        
-        # Verify barcodes against database if found
         verified_results = []
         if results:
-            for barcode in results:
-                student_verification = db.verify_student(barcode['data'])
-                barcode['verification'] = student_verification
-                verified_results.append(barcode)
-        
-        return jsonify({
-            'success': len(results) > 0,
-            'barcodes': verified_results,
-            'scanning': True
-        })
+            # Only process the first barcode found and stop scanning
+            barcode = results[0]
+            student_verification = db.verify_student(barcode['data'])
+            barcode['verification'] = student_verification
+            verified_results.append(barcode)
+            return jsonify({
+                'success': True,
+                'barcodes': verified_results,
+                'scanning': False  # Stop scanning
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'barcodes': [],
+                'scanning': True  # Continue scanning if nothing found
+            })
     
     except Exception as e:
         return jsonify({'error': f'Error in continuous scanning: {str(e)}'}), 500

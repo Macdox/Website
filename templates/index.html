@@ -624,23 +624,24 @@
             .then(data => {
                 if (data.success && data.barcodes && data.barcodes.length > 0) {
                     const newBarcode = data.barcodes[0].data;
-                    
                     // Only show result if it's a new barcode (prevent spam)
                     if (newBarcode !== lastFoundBarcode) {
                         lastFoundBarcode = newBarcode;
                         showRegistrationPopup(data.barcodes[0]);
                         updateScanStatus('✅ Barcode found!', 'found');
-                        
-                        // Play success sound (if browser supports it)
                         playSuccessSound();
-                        
-                        // Reset after 5 seconds to allow scanning new barcodes
-                        setTimeout(() => {
-                            lastFoundBarcode = null;
-                            if (isScanning) {
-                                updateScanStatus('🔍 Scanning for barcodes...', 'scanning');
-                            }
-                        }, 5000);
+                        // Stop scanning and turn off camera if backend says scanning: false
+                        if (data.scanning === false) {
+                            stopCamera();
+                        } else {
+                            // Reset after 5 seconds to allow scanning new barcodes
+                            setTimeout(() => {
+                                lastFoundBarcode = null;
+                                if (isScanning) {
+                                    updateScanStatus('🔍 Scanning for barcodes...', 'scanning');
+                                }
+                            }, 5000);
+                        }
                     }
                 } else {
                     // No barcode found, keep scanning

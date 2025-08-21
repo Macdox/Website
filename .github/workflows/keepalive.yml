@@ -2,11 +2,8 @@ name: Keep Render App Alive
 
 on:
   schedule:
-    # Run every 10 minutes during active hours (8 AM to 11 PM UTC)
-    - cron: '*/10 8-23 * * *'
-    # Run every 30 minutes during off hours (11 PM to 8 AM UTC)
-    - cron: '*/30 23,0-7 * * *'
-  workflow_dispatch: # Allow manual triggering
+    - cron: '*/7 * * * *'
+  workflow_dispatch:
 
 jobs:
   ping:
@@ -16,7 +13,7 @@ jobs:
     - name: Ping Render App
       run: |
         # Replace with your actual Render app URL
-        APP_URL="https://barcode-scanner.onrender.com"
+        APP_URL="https://website-htdi.onrender.com"
         
         echo "🚀 Pinging $APP_URL at $(date)"
         
