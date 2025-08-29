@@ -10,6 +10,10 @@ import logging
 from database import StudentDatabase
 from datetime import datetime
 from functools import wraps, lru_cache
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Configure logging for production
 if os.environ.get('DEBUG', 'False').lower() != 'true':
