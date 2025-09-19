@@ -43,35 +43,40 @@ class StudentDatabase:
                     "name": "John Doe",
                     "age": 25,
                     "email": "john.doe@example.com",
-                    "registration_status": True
+                    "registration_status": True,
+                    "competition": True
                 },
                 {
                     "student_id": "22UF17309EC077",
                     "name": "Sid",
                     "age": 25,
                     "email": "sid@example.com",
-                    "registration_status": False
+                    "registration_status": False,
+                    "competition": False
                 },
                 {
                     "student_id": "23UF12345678EC076",
                     "name": "Jane Smith",
                     "age": 22,
                     "email": "jane.smith@example.com",
-                    "registration_status": False
+                    "registration_status": False,
+                    "competition": True
                 },
                 {
                     "student_id": "123456789",
                     "name": "Bob Johnson",
                     "age": 21,
                     "email": "bob.johnson@example.com",
-                    "registration_status": False
+                    "registration_status": False,
+                    "competition": False
                 },
                 {
                     "student_id": "987654321",
                     "name": "Alice Brown",
                     "age": 24,
                     "email": "alice.brown@example.com",
-                    "registration_status": True
+                    "registration_status": True,
+                    "competition": True
                 }
             ]
             
