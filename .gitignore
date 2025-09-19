@@ -65,6 +65,11 @@ uploads/*
 .env.test.local
 .env.production.local
 
+# Google Credentials
+credentials.json
+service-account.json
+*.json
+
 # Dependencies
 node_modules/
 npm-debug.log*
