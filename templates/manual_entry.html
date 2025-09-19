@@ -142,6 +142,7 @@
             transition: border-color 0.3s ease;
             text-align: center;
             letter-spacing: 1px;
+            text-transform: uppercase;
         }
         
         .form-group input:focus {
@@ -418,6 +419,13 @@
         
         // Auto-focus on student ID input
         studentIdInput.focus();
+        
+        // Convert input to uppercase as user types
+        studentIdInput.addEventListener('input', function(e) {
+            const cursorPosition = e.target.selectionStart;
+            e.target.value = e.target.value.toUpperCase();
+            e.target.setSelectionRange(cursorPosition, cursorPosition);
+        });
         
         // Form submission handler
         form.addEventListener('submit', function(e) {
