@@ -516,6 +516,16 @@
         }
         
         function showStudentDetails(student) {
+            let competitionRow = '';
+            if (student.competition === true) {
+                competitionRow = `
+                    <div class="detail-row">
+                        <span class="detail-label">🏆 Competition:</span>
+                        <span class="detail-value" style="color: #ff6b35; font-weight: bold;">In Competition</span>
+                    </div>
+                `;
+            }
+            
             detailsContent.innerHTML = `
                 <div class="detail-row">
                     <span class="detail-label">🆔 Student ID:</span>
@@ -533,6 +543,7 @@
                     <span class="detail-label">🎂 Age:</span>
                     <span class="detail-value">${student.age} years</span>
                 </div>
+                ${competitionRow}
                 <div class="detail-row">
                     <span class="detail-label">📋 Status:</span>
                     <span class="detail-value" style="color: ${student.registration_status ? '#28a745' : '#dc3545'}">

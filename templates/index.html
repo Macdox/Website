@@ -509,11 +509,17 @@
             popup.classList.add(type);
             
             if (studentInfo) {
+                let competitionStatus = '';
+                if (studentInfo.competition === true) {
+                    competitionStatus = '<p style="color: #ff6b35; font-weight: bold;">🏆 In Competition</p>';
+                }
+                
                 popupStudentInfo.innerHTML = `
                     <h4>👤 ${studentInfo.name}</h4>
                     <p>📧 ${studentInfo.email}</p>
                     <p>🎂 Age: ${studentInfo.age}</p>
                     <p>🆔 ID: ${studentInfo.student_id}</p>
+                    ${competitionStatus}
                 `;
                 popupStudentInfo.style.display = 'block';
             } else {
